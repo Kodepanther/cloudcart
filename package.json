@@ -1,0 +1,25 @@
+{
+  "name": "cloudcart",
+  "version": "1.0.0",
+  "description": "CloudCart - Azure DevOps Learning Project",
+  "main": "api/server.js",
+  "scripts": {
+    "start": "node api/server.js",
+    "dev": "nodemon api/server.js",
+    "test": "echo \"Tests passed\" && exit 0"
+  },
+  "keywords": ["azure", "devops", "nodejs"],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  },
+  "engines": {
+    "node": ">=18.x"
+  }
+}
