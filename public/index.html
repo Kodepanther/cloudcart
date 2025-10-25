@@ -3,68 +3,275 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CloudCart - Product Catalog</title>
-    <link rel="stylesheet" href="styles.css">
+    <title>CloudCart - Modern E-Commerce Solutions</title>
+    <link rel="stylesheet" href="css/main.css">
 </head>
 <body>
-    <div id="app">
-        <!-- Header -->
-        <header class="header">
-            <div class="environment-badge" id="environmentBadge">LOCAL</div>
-            <h1>🛒 CloudCart</h1>
-            <p>Product Catalog - Azure DevOps Learning Project</p>
-        </header>
+    <!-- Environment Badge -->
+    <div class="environment-badge" id="environmentBadge">LOCAL</div>
 
-        <!-- Main Content -->
-        <main class="main-content">
-            <!-- Loading State -->
-            <div id="loadingState" class="loading">
-                <p>Loading products...</p>
-            </div>
-
-            <!-- Error State -->
-            <div id="errorState" class="error" style="display: none;">
-                <p id="errorMessage"></p>
-                <button onclick="app.loadProducts()">Retry</button>
-            </div>
-
-            <!-- Add Product Form -->
-            <div class="add-product-section">
-                <button id="toggleFormBtn" class="btn btn-primary" onclick="app.toggleForm()">
-                    ➕ Add New Product
-                </button>
-                
-                <form id="addProductForm" class="add-product-form" style="display: none;">
-                    <h3>Add New Product</h3>
-                    <div class="form-group">
-                        <input type="text" id="productName" placeholder="Product Name" required>
-                    </div>
-                    <div class="form-group">
-                        <input type="number" id="productPrice" placeholder="Price" step="0.01" required>
-                    </div>
-                    <div class="form-group">
-                        <input type="number" id="productStock" placeholder="Stock" required>
-                    </div>
-                    <div class="form-group">
-                        <input type="text" id="productCategory" placeholder="Category">
-                    </div>
-                    <div class="form-actions">
-                        <button type="submit" class="btn btn-success">Add Product</button>
-                        <button type="button" class="btn btn-secondary" onclick="app.toggleForm()">Cancel</button>
-                    </div>
-                </form>
-            </div>
-
-            <!-- Products Grid -->
-            <div id="productsGrid" class="products-grid"></div>
-        </main>
-
-        <!-- Footer -->
-        <footer class="footer">
-            <p>Powered by Azure DevOps | Environment: <span id="footerEnv">local</span></p>
-        </footer>
+<!-- Navigation -->
+<nav class="navbar">
+    <div class="container">
+        <div class="nav-brand">
+            <h2>🛒 CloudCart</h2>
+        </div>
+        <ul class="nav-links">
+            <li><a href="#home">Home</a></li>
+            <li><a href="#services">Services</a></li>
+            <li><a href="#features">Features</a></li>
+            <li><a href="#about">About</a></li>
+            <li><a href="pages/products.html" class="btn-nav">View Products</a></li>
+        </ul>
+        <div class="hamburger" id="hamburger">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
     </div>
+</nav>
 
-    <script src="app.js"></script>
+<!-- Hero Section -->
+<section id="home" class="hero">
+    <div class="container">
+        <div class="hero-content">
+            <h1 class="hero-title">
+                Welcome to <span class="gradient-text">CloudCart</span>
+            </h1>
+            <p class="hero-subtitle">
+                Your Modern E-Commerce Platform Built on Azure
+            </p>
+            <p class="hero-description">
+                Experience seamless shopping with cutting-edge cloud technology. 
+                Fast, secure, and scalable solutions for the digital age.
+            </p>
+            <div class="hero-buttons">
+                <a href="pages/products.html" class="btn btn-primary btn-large">
+                    Browse Products →
+                </a>
+                <a href="#services" class="btn btn-secondary btn-large">
+                    Learn More
+                </a>
+            </div>
+            <div class="hero-stats">
+                <div class="stat">
+                    <h3 id="productCount">0</h3>
+                    <p>Products Available</p>
+                </div>
+                <div class="stat">
+                    <h3>99.9%</h3>
+                    <p>Uptime</p>
+                </div>
+                <div class="stat">
+                    <h3>24/7</h3>
+                    <p>Support</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="hero-decoration">
+        <div class="floating-card card-1"></div>
+        <div class="floating-card card-2"></div>
+        <div class="floating-card card-3"></div>
+    </div>
+</section>
+
+<!-- Services Section -->
+<section id="services" class="services">
+    <div class="container">
+        <div class="section-header">
+            <h2>Our Services</h2>
+            <p>Comprehensive e-commerce solutions powered by Azure cloud infrastructure</p>
+        </div>
+        <div class="services-grid">
+            <div class="service-card">
+                <div class="service-icon">📦</div>
+                <h3>Product Management</h3>
+                <p>Comprehensive inventory system with real-time stock tracking and automated alerts</p>
+                <ul class="service-features">
+                    <li>Real-time inventory</li>
+                    <li>Stock notifications</li>
+                    <li>Category management</li>
+                </ul>
+            </div>
+            <div class="service-card">
+                <div class="service-icon">🚀</div>
+                <h3>Fast Deployment</h3>
+                <p>CI/CD pipelines with Azure DevOps ensuring rapid, reliable deployments</p>
+                <ul class="service-features">
+                    <li>Automated testing</li>
+                    <li>Blue-green deployment</li>
+                    <li>Zero downtime</li></ul>
+                </div>
+                <div class="service-card">
+                    <div class="service-icon">🔒</div>
+                    <h3>Enterprise Security</h3>
+                    <p>Bank-level security with Azure's compliance and data protection standards</p>
+                    <ul class="service-features">
+                        <li>SSL encryption</li>
+                        <li>Regular backups</li>
+                        <li>Compliance ready</li>
+                    </ul>
+                </div>
+                <div class="service-card">
+                    <div class="service-icon">📊</div>
+                    <h3>Analytics & Insights</h3>
+                    <p>Powerful analytics to understand your customers and optimize performance</p>
+                    <ul class="service-features">
+                        <li>Real-time monitoring</li>
+                        <li>Custom reports</li>
+                        <li>Performance metrics</li>
+                    </ul>
+                </div>
+                <div class="service-card">
+                    <div class="service-icon">☁️</div>
+                    <h3>Cloud Infrastructure</h3>
+                    <p>Built on Microsoft Azure for unmatched reliability and scalability</p>
+                    <ul class="service-features">
+                        <li>Auto-scaling</li>
+                        <li>Global CDN</li>
+                        <li>99.9% uptime SLA</li>
+                    </ul>
+                </div>
+                <div class="service-card">
+                    <div class="service-icon">🎯</div>
+                    <h3>API Integration</h3>
+                    <p>RESTful APIs for seamless integration with your existing systems</p>
+                    <ul class="service-features">
+                        <li>Well-documented APIs</li>
+                        <li>Webhook support</li>
+                        <li>Easy integration</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="features">
+        <div class="container">
+            <div class="section-header">
+                <h2>Platform Features</h2>
+                <p>Everything you need to run a successful online store</p>
+            </div>
+            <div class="features-grid">
+                <div class="feature-item">
+                    <div class="feature-number">01</div>
+                    <h3>Responsive Design</h3>
+                    <p>Perfect experience on any device - desktop, tablet, or mobile</p>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-number">02</div>
+                    <h3>Lightning Fast</h3>
+                    <p>Optimized performance with Azure CDN and caching strategies</p>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-number">03</div>
+                    <h3>Easy Management</h3>
+                    <p>Intuitive admin interface for managing products and orders</p>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-number">04</div>
+                    <h3>Scalable Architecture</h3>
+                    <p>Grows with your business from startup to enterprise</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- About Section -->
+    <section id="about" class="about">
+        <div class="container">
+            <div class="about-content">
+                <div class="about-text">
+                    <h2>About CloudCart</h2>
+                    <p class="lead">
+                        CloudCart is a learning project demonstrating modern DevOps practices 
+                        with Azure infrastructure and continuous deployment pipelines.
+                    </p>
+                    <p>
+                        This platform showcases best practices in cloud architecture, including:
+                    </p>
+                    <ul class="about-list">
+                        <li>✅ Infrastructure as Code (IaC)</li>
+                        <li>✅ CI/CD with Azure Pipelines</li>
+                        <li>✅ GitHub integration and branching strategies</li>
+                        <li>✅ Deployment slots for zero-downtime releases</li>
+                        <li>✅ Environment-based configurations</li>
+                        <li>✅ Automated testing and quality gates</li>
+                    </ul>
+                    <div class="tech-stack">
+                        <h3>Technology Stack</h3>
+                        <div class="tech-badges">
+                            <span class="tech-badge">Node.js</span>
+                            <span class="tech-badge">Express</span>
+                            <span class="tech-badge">Vanilla JS</span>
+                            <span class="tech-badge">Azure App Service</span>
+                            <span class="tech-badge">Azure DevOps</span>
+                            <span class="tech-badge">GitHub</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="about-visual">
+                    <div class="deployment-flow">
+                        <div class="flow-item">
+                            <div class="flow-badge feature">Feature</div>
+                            <div class="flow-arrow">↓</div>
+                        </div>
+                        <div class="flow-item">
+                            <div class="flow-badge develop">Develop</div>
+                            <div class="flow-arrow">↓</div>
+                        </div>
+                        <div class="flow-item">
+                            <div class="flow-badge staging">Staging</div>
+                            <div class="flow-arrow">↓</div>
+                        </div>
+                        <div class="flow-item">
+                            <div class="flow-badge production">Production</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>🛒 CloudCart</h3>
+                    <p>Modern e-commerce platform built with Azure and DevOps best practices.</p>
+                </div>
+                <div class="footer-section">
+                    <h4>Quick Links</h4>
+                    <ul>
+                        <li><a href="#home">Home</a></li>
+                        <li><a href="#services">Services</a></li>
+                        <li><a href="pages/products.html">Products</a></li>
+                        <li><a href="/api/info" target="_blank">API Info</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Environment</h4>
+                    <p>Current: <span id="footerEnv" class="env-text">local</span></p>
+                    <p>Status: <span class="status-indicator">●</span> Online</p>
+                </div>
+                <div class="footer-section">
+                    <h4>Resources</h4>
+                    <ul>
+                        <li><a href="https://azure.microsoft.com" target="_blank">Azure</a></li>
+                        <li><a href="https://dev.azure.com" target="_blank">Azure DevOps</a></li>
+                        <li><a href="https://github.com" target="_blank">GitHub</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2025 CloudCart. Built for learning Azure DevOps. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="js/main.js"></script>
 </body>
 </html>

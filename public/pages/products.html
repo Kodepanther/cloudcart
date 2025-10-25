@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Products - CloudCart</title>
+    <link rel="stylesheet" href="../css/main.css">
+    <link rel="stylesheet" href="../css/products.css">
+</head>
+<body>
+    <!-- Environment Badge -->
+    <div class="environment-badge" id="environmentBadge">LOCAL</div>
+
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="container">
+            <div class="nav-brand">
+                <h2>🛒 CloudCart</h2>
+            </div>
+            <ul class="nav-links">
+                <li><a href="../index.html">← Back to Home</a></li>
+                <li><a href="#products">Products</a></li>
+                <li><a href="/api/info" target="_blank">API Info</a></li>
+            </ul>
+            <div class="hamburger" id="hamburger">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Page Header -->
+    <section class="page-header">
+        <div class="container">
+            <h1>Product Catalog</h1>
+            <p>Browse and manage our product inventory</p>
+        </div>
+    </section>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="container">
+            <!-- Controls Section -->
+            <div class="controls-section">
+                <div class="search-box">
+                    <input type="text" id="searchInput" placeholder="🔍 Search products..." />
+                </div>
+                <button id="toggleFormBtn" class="btn btn-primary" onclick="productApp.toggleForm()">
+                    ➕ Add New Product
+                </button>
+            </div>
+
+            <!-- Add Product Form -->
+            <div id="addProductForm" class="add-product-form" style="display: none;">
+                <div class="form-card">
+                    <h3>Add New Product</h3>
+                    <form id="productForm" onsubmit="productApp.addProduct(event)">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="productName">Product Name *</label>
+                                <input type="text" id="productName" placeholder="e.g., Wireless Headphones" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="productCategory">Category *</label>
+                                <input type="text" id="productCategory" placeholder="e.g., Electronics" required>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="productPrice">Price ($) *</label>
+                                <input type="number" id="productPrice" placeholder="0.00" step="0.01" min="0" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="productStock">Stock Quantity *</label>
+                                <input type="number" id="productStock" placeholder="0" min="0" required>
+                            </div>
+                        </div>
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-success">
+                                ✓ Add Product
+                            </button>
+                            <button type="button" class="btn btn-secondary" onclick="productApp.toggleForm()">
+                                ✕ Cancel
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Loading State -->
+            <div id="loadingState" class="loading">
+                <div class="spinner"></div>
+                <p>Loading products...</p>
+            </div>
+
+            <!-- Error State -->
+            <div id="errorState" class="error" style="display: none;">
+                <div class="error-icon">⚠️</div>
+                <p id="errorMessage"></p>
+                <button onclick="productApp.loadProducts()" class="btn btn-primary">
+                    🔄 Retry
+                </button>
+            </div>
+
+            <!-- Products Grid -->
+            <div id="productsGrid" class="products-grid"></div>
+
+            <!-- Empty State -->
+            <div id="emptyState" class="empty-state" style="display: none;">
+                <div class="empty-icon">📦</div>
+                <h3>No Products Found</h3>
+                <p>Start by adding your first product to the catalog</p>
+                <button onclick="productApp.toggleForm()" class="btn btn-primary">
+                    ➕ Add Your First Product
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>🛒 CloudCart</h3>
+                    <p>Product Catalog Management</p>
+                </div>
+                <div class="footer-section">
+                    <h4>Environment</h4>
+                    <p>Current: <span id="footerEnv" class="env-text">local</span></p>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2025 CloudCart. Built for learning Azure DevOps.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="../js/products.js"></script>
+</body>
+</html>
