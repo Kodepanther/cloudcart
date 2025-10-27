@@ -12,7 +12,7 @@ trigger:
 pr: none
 
 pool:
-  name: 'SanboxAgent'
+  name: SandboxAgent
 
 variables:
   # Azure Service Connection
