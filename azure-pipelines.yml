@@ -16,7 +16,7 @@ pool:
 
 variables:
   # Azure Service Connection
-  azureSubscription: 'Azure-CloudCart-Connection'
+  azureSubscription: 'Azure-CloudCart-Connection-stg'
   
   # Resource Groups
   rgDev: 'rg-cloudcart-dev'
