@@ -1,5 +1,5 @@
 # azure-pipelines.yml
-# CloudCart CI/CD Pipeline - Branch-based deployment
+# CloudCart CI/CD Pipeline - Progressive deployment with artifact promotion
 
 trigger:
   branches:
@@ -8,15 +8,16 @@ trigger:
       - staging
       - develop
 
-# Don't trigger on PR
 pr: none
 
 pool:
-  name: SandboxAgent  # your Windows self-hosted agent pool
+  name: SandboxAgent
 
 variables:
-  # Azure Service Connection
-  azureSubscription: 'Azure-CloudCart-Connection'
+  # Azure Service Connections (one per resource group)
+  azureSubscriptionDev: 'Azure-CloudCart-Connection'
+  azureSubscriptionStaging: 'Azure-CloudCart-Connection-stg'
+  azureSubscriptionProd: 'Azure-CloudCart-Connection-prod'
   
   # Resource Groups
   rgDev: 'rg-cloudcart-dev'
@@ -27,6 +28,7 @@ variables:
   webAppDev: 'cloudcart-dev-webapp'
   webAppStaging: 'cloudcart-staging-webapp'
   webAppProd: 'cloudcart-prod-webapp'
+  slotName: 'slot'
   
   # Node version
   nodeVersion: '22.x'
@@ -41,24 +43,20 @@ stages:
       - job: BuildJob
         displayName: 'Build Node.js App'
         steps:
-          # Checkout code
           - checkout: self
             displayName: 'Checkout Repository'
           
-          # Setup Node.js
           - task: NodeTool@0
             displayName: 'Install Node.js $(nodeVersion)'
             inputs:
               versionSpec: '$(nodeVersion)'
 
-          # Install dependencies
           - script: |
               echo "📦 Installing dependencies..."
               npm ci || npm install
             displayName: 'Install Dependencies'
             shell: powershell
 
-          # Run tests (optional)
           - script: |
               echo "🧪 Running tests..."
               npm test
@@ -66,7 +64,6 @@ stages:
             shell: powershell
             continueOnError: true
 
-          # Create zip package
           - task: ArchiveFiles@2
             displayName: 'Archive Application Files'
             inputs:
@@ -77,7 +74,6 @@ stages:
               replaceExistingArchive: true
               verbose: true
           
-          # Publish artifact
           - task: PublishBuildArtifacts@1
             displayName: 'Publish Build Artifact'
             inputs:
@@ -103,7 +99,7 @@ stages:
                 - task: AzureWebApp@1
                   displayName: 'Deploy to Azure Web App (Dev)'
                   inputs:
-                    azureSubscription: '$(azureSubscription)'
+                    azureSubscription: '$(azureSubscriptionDev)'
                     appType: 'webAppLinux'
                     appName: '$(webAppDev)'
                     resourceGroupName: '$(rgDev)'
@@ -116,15 +112,23 @@ stages:
                     echo "🌐 URL: https://$(webAppDev).azurewebsites.net"
                   displayName: 'Deployment Summary'
                   shell: powershell
-                  continueOnError: false
 
 # ============================================
-# STAGE 3: DEPLOY TO STAGING
+# STAGE 3: DEPLOY TO STAGING (from artifact)
 # ============================================
   - stage: DeployStaging
     displayName: 'Deploy to Staging'
-    dependsOn: Build
-    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/staging'))
+    dependsOn: 
+      - Build
+      - DeployDev
+    condition: |
+      and(
+        succeeded(),
+        or(
+          eq(variables['Build.SourceBranch'], 'refs/heads/staging'),
+          eq(variables['Build.SourceBranch'], 'refs/heads/main')
+        )
+      )
     jobs:
       - deployment: DeployStagingJob
         displayName: 'Deploy to Staging Environment'
@@ -136,7 +140,7 @@ stages:
                 - task: AzureWebApp@1
                   displayName: 'Deploy to Azure Web App (Staging)'
                   inputs:
-                    azureSubscription: '$(azureSubscription)'
+                    azureSubscription: '$(azureSubscriptionStaging)'
                     appType: 'webAppLinux'
                     appName: '$(webAppStaging)'
                     resourceGroupName: '$(rgStaging)'
@@ -151,84 +155,118 @@ stages:
                   shell: powershell
 
 # ============================================
-# STAGE 4: DEPLOY TO PRODUCTION SLOT
+# STAGE 4: DEPLOY TO PRODUCTION SLOT (from artifact)
 # ============================================
-  - stage: DeployProdToSlot
-    displayName: 'Deploy to Production Staging Slot'
-    dependsOn: Build
+  - stage: DeployProdSlot
+    displayName: 'Deploy to Production Slot'
+    dependsOn: 
+      - Build
+      - DeployStaging
     condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
     jobs:
       - deployment: DeployProdSlotJob
-        displayName: 'Deploy to Staging Slot First'
-        environment: 'production-slot'
+        displayName: 'Deploy to Production Slot'
+        environment: 'Production-Slot'
         strategy:
           runOnce:
             deploy:
               steps:
                 - task: AzureWebApp@1
-                  displayName: 'Deploy to Staging Slot'
+                  displayName: 'Deploy to Production Slot'
                   inputs:
-                    azureSubscription: '$(azureSubscription)'
+                    azureSubscription: '$(azureSubscriptionProd)'
                     appType: 'webAppLinux'
                     appName: '$(webAppProd)'
                     resourceGroupName: '$(rgProd)'
                     package: '$(Pipeline.Workspace)/drop/$(Build.BuildId).zip'
                     runtimeStack: 'NODE|22-lts'
                     deployToSlotOrASE: true
-                    slotName: 'staging-slot'
+                    slotName: '$(slotName)'
                     startUpCommand: 'npm start'
                 
                 - script: |
-                    echo "✅ Deployed to staging slot!"
-                    echo "🌐 Staging Slot URL: https://$(webAppProd)-staging-slot.azurewebsites.net"
-                    echo "⏳ Please test before swapping"
+                    echo "✅ Deployed to production slot!"
+                    echo "🌐 Slot URL: https://$(webAppProd)-$(slotName).azurewebsites.net"
+                    echo "⏳ Please test the slot before approving swap to production"
                   displayName: 'Slot Deployment Summary'
                   shell: powershell
 
-  # Manual approval stage
+# ============================================
+# STAGE 5: MANUAL APPROVAL GATE
+# ============================================
   - stage: ApproveSwap
-    displayName: 'Approve Slot Swap'
-    dependsOn: DeployProdToSlot
+    displayName: 'Approve Production Swap'
+    dependsOn: DeployProdSlot
     condition: succeeded()
     jobs:
       - job: WaitForApproval
-        displayName: 'Wait for Manual Approval'
+        displayName: 'Manual Approval Required'
         pool: server
+        timeoutInMinutes: 1440 # 24 hours
         steps:
           - task: ManualValidation@0
-            displayName: 'Manual Approval Required'
+            displayName: 'Approve Slot Swap to Production'
             inputs:
+              notifyUsers: ''
               instructions: |
-                Please verify the staging slot:
-                https://$(webAppProd)-staging-slot.azurewebsites.net
-                Approve to swap, or reject to abort.
+                🧪 VERIFICATION REQUIRED
+                
+                Please test the production slot before approving:
+                https://$(webAppProd)-$(slotName).azurewebsites.net
+                
+                Checklist:
+                ✓ Application loads correctly
+                ✓ All features work as expected
+                ✓ Environment badge shows correct environment
+                ✓ No console errors
+                ✓ API endpoints respond correctly
+                
+                ✅ APPROVE: Swap slot to production
+                ❌ REJECT: Keep current production version
               onTimeout: 'reject'
 
-  # Slot swap to production
+# ============================================
+# STAGE 6: SWAP SLOT TO PRODUCTION
+# ============================================
   - stage: SwapToProduction
-    displayName: 'Swap to Production'
+    displayName: 'Swap Slot to Production'
     dependsOn: ApproveSwap
     condition: succeeded()
     jobs:
       - deployment: SwapSlotsJob
-        displayName: 'Swap Staging Slot to Production'
-        environment: 'production'
+        displayName: 'Swap Production Slot'
+        environment: 'Production'
         strategy:
           runOnce:
             deploy:
               steps:
                 - task: AzureAppServiceManage@0
-                  displayName: 'Swap Slots (Staging → Production)'
+                  displayName: 'Swap Slot to Production'
                   inputs:
-                    azureSubscription: '$(azureSubscription)'
+                    azureSubscription: '$(azureSubscriptionProd)'
                     Action: 'Swap Slots'
                     WebAppName: '$(webAppProd)'
                     ResourceGroupName: '$(rgProd)'
-                    SourceSlot: 'staging-slot'
+                    SourceSlot: '$(slotName)'
                     SwapWithProduction: true
                 
                 - script: |
+                    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
                     echo "🎉 PRODUCTION DEPLOYMENT SUCCESSFUL!"
-                    echo "🌐 Production URL: https://$(webAppProd).azurewebsites.net"
+                    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+                    echo ""
+                    echo "🌐 Production URL:"
+                    echo "   https://$(webAppProd).azurewebsites.net"
+                    echo ""
+                    echo "📋 Deployment Details:"
+                    echo "   Build ID: $(Build.BuildId)"
+                    echo "   Commit: $(Build.SourceVersion)"
+                    echo "   Branch: $(Build.SourceBranch)"
+                    echo ""
+                    echo "📝 Rollback Information:"
+                    echo "   Previous version now in slot for quick rollback"
+                    echo "   Slot URL: https://$(webAppProd)-$(slotName).azurewebsites.net"
+                    echo ""
+                    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
                   displayName: 'Production Deployment Summary'
                   shell: powershell
