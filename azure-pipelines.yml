@@ -2,14 +2,31 @@ trigger:
   branches:
     include:
       - main
+      - staging
+      - develop
+
+# Don't trigger on PR
+pr: none
+
+pool:
+  name: SandboxAgent
 
 variables:
-  appName: 'cloudcart-webapp'
-  devSlot: 'dev'
-  stagingSlot: 'staging'
-  prodSlot: 'production-slot'
-  prodWebAppName: 'cloudcart-prod-webapp'
-  artifactName: 'drop'
+  # Azure Service Connection
+  azureSubscription: 'Azure-CloudCart-Connection-stg'
+  
+  # Resource Groups
+  rgDev: 'rg-cloudcart-dev'
+  rgStaging: 'rg-cloudcart-staging'
+  rgProd: 'rg-cloudcart-prod'
+  
+  # Web App Names
+  webAppDev: 'cloudcart-dev-webapp'
+  webAppStaging: 'cloudcart-staging-webapp'
+  webAppProd: 'cloudcart-prod-webapp'
+  
+  # Node version
+  nodeVersion: '22.x'
 
 stages:
 # -------------------------------
