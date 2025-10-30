@@ -89,7 +89,7 @@ stages:
         appType: 'webAppLinux'
         appName: '$(webAppDev)'
         resourceGroupName: '$(rgDev)'
-        package: '$(Pipeline.Workspace)/$(artifactName)/**/*.zip'
+        package: '$(Pipeline.Workspace)/$(artifactName)/$(Build.BuildId).zip'
         runtimeStack: 'NODE|22-lts'
         startUpCommand: 'npm start'
 
@@ -116,7 +116,7 @@ stages:
         appType: 'webAppLinux'
         appName: '$(webAppStaging)'
         resourceGroupName: '$(rgStaging)'
-        package: '$(Pipeline.Workspace)/$(artifactName)/**/*.zip'
+        package: '$(Pipeline.Workspace)/$(artifactName)/$(Build.BuildId).zip'
         runtimeStack: 'NODE|22-lts'
         startUpCommand: 'npm start'
 
@@ -143,7 +143,7 @@ stages:
         appType: 'webAppLinux'
         appName: '$(webAppProd)'
         resourceGroupName: '$(rgProd)'
-        package: '$(Pipeline.Workspace)/$(artifactName)/**/*.zip'
+        package: '$(Pipeline.Workspace)/$(artifactName)/$(Build.BuildId).zip'
         deployToSlotOrASE: true
         slotName: 'production-slot'
         runtimeStack: 'NODE|22-lts'
