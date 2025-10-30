@@ -37,8 +37,6 @@ stages:
   jobs:
   - job: DeployDev
     displayName: "Deploy to Dev Slot"
-    pool:
-      vmImage: 'ubuntu-latest'
     steps:
     - task: DownloadPipelineArtifact@2
       inputs:
@@ -63,8 +61,6 @@ stages:
   jobs:
   - job: DeployStaging
     displayName: "Deploy to Staging Slot"
-    pool:
-      vmImage: 'ubuntu-latest'
     steps:
     - task: DownloadPipelineArtifact@2
       inputs:
@@ -89,8 +85,6 @@ stages:
   jobs:
   - job: DeployProdSlot
     displayName: "Deploy to Production Slot"
-    pool:
-      vmImage: 'ubuntu-latest'
     steps:
     - task: DownloadPipelineArtifact@2
       inputs:
