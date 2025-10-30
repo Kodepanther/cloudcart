@@ -55,13 +55,11 @@ stages:
               echo "📦 Installing dependencies..."
               npm ci || npm install
             displayName: 'Install Dependencies'
-            shell: powershell
 
           - script: |
               echo "🧪 Running tests..."
               npm test
             displayName: 'Run Tests'
-            shell: powershell
             continueOnError: true
 
           - task: ArchiveFiles@2
@@ -111,7 +109,6 @@ stages:
                     echo "✅ Development deployment completed!"
                     echo "🌐 URL: https://$(webAppDev).azurewebsites.net"
                   displayName: 'Deployment Summary'
-                  shell: powershell
 
 # ============================================
 # STAGE 3: DEPLOY TO STAGING (from artifact)
@@ -152,7 +149,6 @@ stages:
                     echo "✅ Staging deployment completed!"
                     echo "🌐 URL: https://$(webAppStaging).azurewebsites.net"
                   displayName: 'Deployment Summary'
-                  shell: powershell
 
 # ============================================
 # STAGE 4: DEPLOY TO PRODUCTION SLOT (from artifact)
@@ -189,7 +185,6 @@ stages:
                     echo "🌐 Slot URL: https://$(webAppProd)-$(slotName).azurewebsites.net"
                     echo "⏳ Please test the slot before approving swap to production"
                   displayName: 'Slot Deployment Summary'
-                  shell: powershell
 
 # ============================================
 # STAGE 5: MANUAL APPROVAL GATE
@@ -269,4 +264,3 @@ stages:
                     echo ""
                     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
                   displayName: 'Production Deployment Summary'
-                  shell: powershell
