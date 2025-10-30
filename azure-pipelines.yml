@@ -86,11 +86,6 @@ stages:
           runOnce:
             deploy:
               steps:
-                - script: |
-                    echo 🔍 Checking if package exists...
-                    dir "$(Pipeline.Workspace)\drop"
-                  displayName: 'Verify artifact path'
-
                 - task: AzureWebApp@1
                   displayName: 'Deploy to Azure Web App (Dev)'
                   inputs:
@@ -98,7 +93,7 @@ stages:
                     appType: 'webAppLinux'
                     appName: '$(webAppDev)'
                     resourceGroupName: '$(rgDev)'
-                    package: '$(Pipeline.Workspace)\drop\**\*.zip'
+                    package: '$(Pipeline.Workspace)\drop\$(Build.BuildId).zip'
                     runtimeStack: 'NODE|22-lts'
                     startUpCommand: 'npm start'
 
@@ -121,11 +116,6 @@ stages:
           runOnce:
             deploy:
               steps:
-                - script: |
-                    echo 🔍 Checking if package exists...
-                    dir "$(Pipeline.Workspace)\drop"
-                  displayName: 'Verify artifact path'
-
                 - task: AzureWebApp@1
                   displayName: 'Deploy to Azure Web App (Staging)'
                   inputs:
@@ -133,7 +123,7 @@ stages:
                     appType: 'webAppLinux'
                     appName: '$(webAppStaging)'
                     resourceGroupName: '$(rgStaging)'
-                    package: '$(Pipeline.Workspace)\drop\**\*.zip'
+                    package: '$(Pipeline.Workspace)\drop\$(Build.BuildId).zip'
                     runtimeStack: 'NODE|22-lts'
                     startUpCommand: 'npm start'
 
@@ -156,11 +146,6 @@ stages:
           runOnce:
             deploy:
               steps:
-                - script: |
-                    echo 🔍 Checking if package exists...
-                    dir "$(Pipeline.Workspace)\drop"
-                  displayName: 'Verify artifact path'
-
                 - task: AzureWebApp@1
                   displayName: 'Deploy to Azure Web App Slot (Prod)'
                   inputs:
@@ -168,7 +153,7 @@ stages:
                     appType: 'webAppLinux'
                     appName: '$(webAppProd)'
                     resourceGroupName: '$(rgProd)'
-                    package: '$(Pipeline.Workspace)\drop\**\*.zip'
+                    package: '$(Pipeline.Workspace)\drop\$(Build.BuildId).zip'
                     runtimeStack: 'NODE|22-lts'
                     deployToSlotOrASE: true
                     slotName: '$(slotName)'
