@@ -2,31 +2,19 @@ trigger:
   branches:
     include:
       - main
-      - staging
       - develop
-
-# Don't trigger on PR
-pr: none
+      - staging
 
 pool:
-  name: SandboxAgent
+  name: 'SandboxAgent'   # 👈 Global self-hosted agent declaration
 
 variables:
-  # Azure Service Connection
-  azureSubscription: 'Azure-CloudCart-Connection-stg'
-  
-  # Resource Groups
-  rgDev: 'rg-cloudcart-dev'
-  rgStaging: 'rg-cloudcart-staging'
-  rgProd: 'rg-cloudcart-prod'
-  
-  # Web App Names
-  webAppDev: 'cloudcart-dev-webapp'
-  webAppStaging: 'cloudcart-staging-webapp'
-  webAppProd: 'cloudcart-prod-webapp'
-  
-  # Node version
-  nodeVersion: '22.x'
+  appName: 'cloudcart-webapp'
+  devSlot: 'dev'
+  stagingSlot: 'staging'
+  prodSlot: 'production-slot'
+  prodWebAppName: 'cloudcart-prod-webapp'
+  artifactName: 'drop'
 
 stages:
 # -------------------------------
@@ -109,7 +97,7 @@ stages:
   jobs:
   - deployment: Swap
     displayName: "Swap Slot to Production"
-    environment: 'production'   # 👈 set an environment for manual approval in Azure DevOps
+    environment: 'production'   # 👈 Set up this environment in Azure DevOps for manual approval
     strategy:
       runOnce:
         deploy:
