@@ -1,3 +1,6 @@
+# azure-pipelines.yml
+# CloudCart CI/CD Pipeline - Branch-based deployment
+
 trigger:
   branches:
     include:
@@ -5,151 +8,234 @@ trigger:
       - staging
       - develop
 
-# Use your self-hosted agent once
+# Don't trigger on PR
+pr: none
+
+# Use self-hosted agent
 pool:
   name: SandboxAgent
 
 variables:
-  artifactName: 'drop'
-  buildConfiguration: 'Release'
+  # Azure Service Connections
+  azureSubscriptionDev: 'Azure-CloudCart-Connection'
+  azureSubscriptionStg: 'Azure-CloudCart-Connection-stg'
+  azureSubscriptionProd: 'Azure-CloudCart-Connection-prod'
 
-  # Azure service connections
-  azureSubDev: 'Azure-CloudCart-Connection'
-  azureSubStg: 'Azure-CloudCart-Connection-stg'
-  azureSubProd: 'Azure-CloudCart-Connection-prod'
-
-  # Web apps and resource groups
-  webAppDev: 'cloudcart-dev-webapp'
+  # Resource Groups
   rgDev: 'rg-cloudcart-dev'
-
-  webAppStg: 'cloudcart-stg-webapp'
-  rgStg: 'rg-cloudcart-stg'
-
-  webAppProd: 'cloudcart-prod-webapp'
+  rgStaging: 'rg-cloudcart-staging'
   rgProd: 'rg-cloudcart-prod'
+  
+  # Web App Names
+  webAppDev: 'cloudcart-dev-webapp'
+  webAppStaging: 'cloudcart-staging-webapp'
+  webAppProd: 'cloudcart-prod-webapp'
+
+  # Slot name
   slotName: 'slot'
 
+  # Node version
+  nodeVersion: '22.x'
+
+# ============================================
+# STAGE 1: BUILD
+# ============================================
 stages:
+  - stage: Build
+    displayName: 'Build Application'
+    jobs:
+      - job: BuildJob
+        displayName: 'Build Node.js App'
+        steps:
+          - checkout: self
+            displayName: 'Checkout Repository'
+          
+          - task: NodeTool@0
+            displayName: 'Install Node.js $(nodeVersion)'
+            inputs:
+              versionSpec: '$(nodeVersion)'
+          
+          - script: |
+              echo "📦 Installing dependencies..."
+              npm ci --production
+            displayName: 'Install dependencies'
+          
+          - script: |
+              echo "🧪 Running tests..."
+              npm test
+            displayName: 'Run Tests'
+            continueOnError: true
+          
+          - task: ArchiveFiles@2
+            displayName: 'Archive Application Files'
+            inputs:
+              rootFolderOrFile: '$(System.DefaultWorkingDirectory)'
+              includeRootFolder: false
+              archiveType: 'zip'
+              archiveFile: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
+              replaceExistingArchive: true
+              verbose: true
+          
+          - task: PublishBuildArtifacts@1
+            displayName: 'Publish Build Artifact'
+            inputs:
+              PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+              ArtifactName: 'drop'
+              publishLocation: 'Container'
 
-# ------------------ BUILD STAGE ------------------
-- stage: Build
-  displayName: 'Build and Publish Artifact'
-  jobs:
-  - job: BuildJob
-    steps:
-    - checkout: self
+# ============================================
+# STAGE 2: DEPLOY TO DEVELOPMENT
+# ============================================
+  - stage: DeployDev
+    displayName: 'Deploy to Development'
+    dependsOn: Build
+    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/develop'))
+    jobs:
+      - deployment: DeployDevJob
+        displayName: 'Deploy to Dev Environment'
+        environment: 'Development'
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - script: |
+                    echo "🔍 Checking if package exists..."
+                    dir "$(Pipeline.Workspace)\drop"
+                  displayName: 'Verify artifact path'
 
-    - task: NodeTool@0
-      inputs:
-        versionSpec: '22.x'
-      displayName: 'Install Node.js'
+                - task: AzureWebApp@1
+                  displayName: 'Deploy to Azure Web App (Dev)'
+                  inputs:
+                    azureSubscription: '$(azureSubscriptionDev)'
+                    appType: 'webAppLinux'
+                    appName: '$(webAppDev)'
+                    resourceGroupName: '$(rgDev)'
+                    package: '$(Pipeline.Workspace)/drop/**/*.zip'
+                    runtimeStack: 'NODE|22-lts'
+                    startUpCommand: 'npm start'
 
-    - script: |
-        npm install
-        npm run build
-      displayName: 'Build Application'
+                - script: |
+                    echo "✅ Development deployment completed!"
+                    echo "🌐 URL: https://$(webAppDev).azurewebsites.net"
+                  displayName: 'Deployment Summary'
 
-    - task: ArchiveFiles@2
-      inputs:
-        rootFolderOrFile: '$(System.DefaultWorkingDirectory)'
-        includeRootFolder: false
-        archiveType: zip
-        archiveFile: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
-        replaceExistingArchive: true
+# ============================================
+# STAGE 3: DEPLOY TO STAGING
+# ============================================
+  - stage: DeployStaging
+    displayName: 'Deploy to Staging'
+    dependsOn: DeployDev
+    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/staging'))
+    jobs:
+      - deployment: DeployStagingJob
+        displayName: 'Deploy to Staging Environment'
+        environment: 'Staging'
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - script: |
+                    echo "🔍 Checking if package exists..."
+                    dir "$(Pipeline.Workspace)\drop"
+                  displayName: 'Verify artifact path'
 
-    - publish: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
-      artifact: $(artifactName)
+                - task: AzureWebApp@1
+                  displayName: 'Deploy to Azure Web App (Staging)'
+                  inputs:
+                    azureSubscription: '$(azureSubscriptionStg)'
+                    appType: 'webAppLinux'
+                    appName: '$(webAppStaging)'
+                    resourceGroupName: '$(rgStaging)'
+                    package: '$(Pipeline.Workspace)/drop/**/*.zip'
+                    runtimeStack: 'NODE|22-lts'
+                    startUpCommand: 'npm start'
 
-# ------------------ DEV DEPLOY ------------------
-- stage: Deploy_Dev
-  displayName: 'Deploy to Dev Environment'
-  dependsOn: Build
-  jobs:
-  - job: DeployDev
-    steps:
-    - task: DownloadPipelineArtifact@2
-      inputs:
-        artifact: $(artifactName)
-        path: $(Pipeline.Workspace)/$(artifactName)
+                - script: |
+                    echo "✅ Staging deployment completed!"
+                    echo "🌐 URL: https://$(webAppStaging).azurewebsites.net"
+                  displayName: 'Deployment Summary'
 
-    - task: AzureWebApp@1
-      displayName: 'Deploy to Dev Web App'
-      inputs:
-        azureSubscription: '$(azureSubDev)'
-        appType: 'webAppLinux'
-        appName: '$(webAppDev)'
-        resourceGroupName: '$(rgDev)'
-        package: '$(Pipeline.Workspace)/$(artifactName)/$(Build.BuildId).zip'
-        runtimeStack: 'NODE|22-lts'
-        startUpCommand: 'npm start'
+# ============================================
+# STAGE 4: DEPLOY TO PRODUCTION SLOT
+# ============================================
+  - stage: DeployProdSlot
+    displayName: 'Deploy to Production Slot'
+    dependsOn: DeployStaging
+    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
+    jobs:
+      - deployment: DeployProdSlotJob
+        displayName: 'Deploy to Production Slot'
+        environment: 'Production-Slot'
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - script: |
+                    echo "🔍 Checking if package exists..."
+                    dir "$(Pipeline.Workspace)\drop"
+                  displayName: 'Verify artifact path'
 
-# ------------------ STAGING DEPLOY ------------------
-- stage: Deploy_Staging
-  displayName: 'Deploy to Staging Environment'
-  dependsOn: Deploy_Dev
-  condition: succeeded()
-  jobs:
-  - job: DeployStg
-    steps:
-    - task: DownloadPipelineArtifact@2
-      inputs:
-        artifact: $(artifactName)
-        path: $(Pipeline.Workspace)/$(artifactName)
+                - task: AzureWebApp@1
+                  displayName: 'Deploy to Azure Web App Slot (Prod)'
+                  inputs:
+                    azureSubscription: '$(azureSubscriptionProd)'
+                    appType: 'webAppLinux'
+                    appName: '$(webAppProd)'
+                    resourceGroupName: '$(rgProd)'
+                    package: '$(Pipeline.Workspace)/drop/**/*.zip'
+                    runtimeStack: 'NODE|22-lts'
+                    deployToSlotOrASE: true
+                    slotName: '$(slotName)'
+                    startUpCommand: 'npm start'
 
-    - task: AzureWebApp@1
-      displayName: 'Deploy to Staging Web App'
-      inputs:
-        azureSubscription: '$(azureSubStg)'
-        appType: 'webAppLinux'
-        appName: '$(webAppStg)'
-        resourceGroupName: '$(rgStg)'
-        package: '$(Pipeline.Workspace)/$(artifactName)/$(Build.BuildId).zip'
-        runtimeStack: 'NODE|22-lts'
-        startUpCommand: 'npm start'
+                - script: |
+                    echo "✅ Deployed to production slot!"
+                    echo "🌐 Slot URL: https://$(webAppProd)-$(slotName).azurewebsites.net"
+                    echo "🕐 Waiting for approval before swapping to production..."
+                  displayName: 'Slot Deployment Summary'
 
-# ------------------ PROD SLOT DEPLOY ------------------
-- stage: Deploy_Prod_Slot
-  displayName: 'Deploy to Production Slot'
-  dependsOn: Deploy_Staging
-  condition: succeeded()
-  jobs:
-  - job: DeployProdSlot
-    steps:
-    - task: DownloadPipelineArtifact@2
-      inputs:
-        artifact: $(artifactName)
-        path: $(Pipeline.Workspace)/$(artifactName)
+# ============================================
+# STAGE 5: APPROVAL & SWAP TO PRODUCTION
+# ============================================
+  - stage: ApproveAndSwap
+    displayName: 'Approve Swap to Production'
+    dependsOn: DeployProdSlot
+    condition: succeeded()
+    jobs:
+      - job: ManualApproval
+        displayName: 'Manual Approval Required'
+        pool: server
+        steps:
+          - task: ManualValidation@0
+            displayName: 'Manual Approval Before Swap'
+            inputs:
+              instructions: |
+                Please validate the deployed app in the production slot:
+                👉 https://cloudcart-prod-webapp-slot.azurewebsites.net
+                
+                Approve to proceed with the swap to the main production app.
+              onTimeout: 'reject'
 
-    - task: AzureWebApp@1
-      displayName: 'Deploy to Production Slot'
-      inputs:
-        azureSubscription: '$(azureSubProd)'
-        appType: 'webAppLinux'
-        appName: '$(webAppProd)'
-        resourceGroupName: '$(rgProd)'
-        slotName: '$(slotName)'
-        package: '$(Pipeline.Workspace)/$(artifactName)/$(Build.BuildId).zip'
-        runtimeStack: 'NODE|22-lts'
-        startUpCommand: 'npm start'
+      - deployment: SwapToProduction
+        displayName: 'Swap Production Slot to Live'
+        dependsOn: ManualApproval
+        condition: succeeded()
+        environment: 'Production'
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - task: AzureAppServiceManage@0
+                  displayName: 'Swap Slot (Slot → Production)'
+                  inputs:
+                    azureSubscription: '$(azureSubscriptionProd)'
+                    Action: 'Swap Slots'
+                    WebAppName: '$(webAppProd)'
+                    ResourceGroupName: '$(rgProd)'
+                    SourceSlot: '$(slotName)'
+                    SwapWithProduction: true
 
-# ------------------ MANUAL APPROVAL + SLOT SWAP ------------------
-- stage: Swap_Slot
-  displayName: 'Manual Approval & Swap to Production'
-  dependsOn: Deploy_Prod_Slot
-  condition: succeeded()
-  approval:
-    approvals:
-      - type: Manual
-        approvers:
-          - your.name@yourcompany.com   # 👈 change this to your approver email
-  jobs:
-  - job: Swap
-    steps:
-    - task: AzureAppServiceManage@0
-      displayName: 'Swap Production Slot to Live'
-      inputs:
-        azureSubscription: '$(azureSubProd)'
-        WebAppName: '$(webAppProd)'
-        ResourceGroupName: '$(rgProd)'
-        SourceSlot: '$(slotName)'
-        Action: 'Swap Slots'
+                - script: |
+                    echo "🎉 Production deployment successful!"
+                    echo "🌐 Production URL: https://$(webAppProd).azurewebsites.net"
+                  displayName: 'Swap Summary'
